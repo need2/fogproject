@@ -127,19 +127,16 @@ class DashboardPage extends FOGPage
 	public function bandwidth()
 	{
 		// Loop each storage node -> grab stats
-		foreach ((array)$this->FOGCore->getClass('StorageNodeManager')->find(array('isEnabled' => 1, 'isGraphEnabled' => 1)) AS $StorageNode)
+		$StorageNode = new StorageNode($_REQUEST['nodeid']);
+		$URL = sprintf('http://%s/%s?dev=%s', rtrim($StorageNode->get('ip'), '/'), ltrim($this->FOGCore->getSetting("FOG_NFS_BANDWIDTHPATH"), '/'), $StorageNode->get('interface'));
+		// Fetch bandwidth stats from remote server
+		if ($fetchedData = $this->FOGCore->fetchURL($URL))
 		{
-			// TODO: Need to move interface to per storage group server
-			$URL = sprintf('http://%s/%s?dev=%s', rtrim($StorageNode->get('ip'), '/'), ltrim($this->FOGCore->getSetting("FOG_NFS_BANDWIDTHPATH"), '/'), $StorageNode->get('interface'));
-			// Fetch bandwidth stats from remote server
-			if ($fetchedData = $this->FOGCore->fetchURL($URL))
-			{
-				// Legacy client
-				if (preg_match('/(.*)##(.*)/U', $fetchedData, $match))
-					$data[$StorageNode->get('name')] = array('rx' => $match[1], 'tx' => $match[2]);
-				else
-					$data[$StorageNode->get('name')] = json_decode($fetchedData, true);
-			}
+			// Legacy client
+			if (preg_match('/(.*)##(.*)/U', $fetchedData, $match))
+				$data = array('rx' => $match[1], 'tx' => $match[2]);
+			else
+				$data = json_decode($fetchedData, true);
 		}
 		print json_encode((array)$data);
 	}

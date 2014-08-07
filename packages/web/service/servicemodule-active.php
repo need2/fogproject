@@ -2,6 +2,8 @@
 require('../commons/base.inc.php');
 try
 {
+	if ($_REQUEST['newService'])
+		throw new Exception("#!ok\n#sleep=".$FOGCore->getSetting('FOG_SERVICE_CHECKIN_TIME')."\n#force=".$FOGCore->getSetting('FOG_TASK_FORCE_REBOOT'));
 	$HostManager = new HostManager();
 	$MACs = HostManager::parseMacList($_REQUEST['mac']);
 	if (!$MACs)
@@ -14,7 +16,15 @@ try
 	$moduleID = current($FOGCore->getClass('ModuleManager')->find(array('shortName' => $_REQUEST['moduleid'])));
 	// get the module id
 	if (empty($_REQUEST['moduleid']) || !$moduleID || !$moduleID->isValid())
-		throw new Exception('#!um');
+	{
+		if ($_REQUEST['moduleid'] == 'snapin')
+			$_REQUEST['moduleid'] = 'snapinclient';
+		else if ($_REQUEST['moduleid'] == 'snapinclient')
+			$_REQUEST['moduleid'] = 'snapin';
+		$moduleID = current($FOGCore->getClass('ModuleManager')->find(array('shortName' => $_REQUEST['moduleid'])));
+		if (!$moduleID || !$moduleID->isValid())
+			throw new Exception('#!um');
+	}
 	// Associate the moduleid param with the global name.
 	$moduleName = array(
 		'dircleanup' => $FOGCore->getSetting('FOG_SERVICE_DIRECTORYCLEANER_ENABLED'),
@@ -24,6 +34,7 @@ try
 		'greenfog' => $FOGCore->getSetting('FOG_SERVICE_GREENFOG_ENABLED'),
 		'hostnamechanger' => $FOGCore->getSetting('FOG_SERVICE_HOSTNAMECHANGER_ENABLED'),
 		'snapin' => $FOGCore->getSetting('FOG_SERVICE_SNAPIN_ENABLED'),
+		'snapinclient' => $FOGCore->getSetting('FOG_SERVICE_SNAPIN_ENABLED'),
 		'clientupdater' => $FOGCore->getSetting('FOG_SERVICE_CLIENTUPDATER_ENABLED'),
 		'hostregister' => $FOGCore->getSetting('FOG_SERVICE_HOSTREGISTER_ENABLED'),
 		'printermanager' => $FOGCore->getSetting('FOG_SERVICE_PRINTERMANAGER_ENABLED'),
